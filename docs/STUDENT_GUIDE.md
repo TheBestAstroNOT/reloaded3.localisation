@@ -6,7 +6,7 @@ This document provides guidance for first-semester programming students who want
 
 ### Difficulty Rating: ★★★★☆ (4/5 - Intermediate to Advanced)
 
-**This project is moderately challenging for first semester students** because it involves:
+**This project is moderately challenging for first semester students** (rated 7/10 on a detailed scale) because it involves:
 - Advanced Rust concepts (unsafe code, FFI, lifetimes)
 - Hash tables and efficient data structures
 - Memory management and optimization
@@ -310,7 +310,7 @@ If you want to contribute:
 
 ## Final Recommendation
 
-**Rating for First Semester Students: 7/10 difficulty**
+**Rating for First Semester Students: ★★★★☆ (4/5 stars, or 7/10 on detailed scale)**
 
 **Use this project to:**
 - Learn by reading the code

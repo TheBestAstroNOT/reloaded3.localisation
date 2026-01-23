@@ -172,12 +172,12 @@ Au revoir!
 ### Step 2: Load the appropriate language
 
 ```rust
-use reloaded3_localisation::parse_r3locale_bytes;
+use reloaded3_localisation::{parse_r3locale_bytes, LocaleTable, ParseR3Error};
 use std::fs;
 
 fn load_language(lang: &str) -> Result<LocaleTable, ParseR3Error> {
     let filename = format!("{}.r3l", lang);
-    let bytes = fs::read(&filename)?;
+    let bytes = fs::read(&filename).map_err(|_| ParseR3Error::FailedToRead)?;
     parse_r3locale_bytes(&bytes)
 }
 
