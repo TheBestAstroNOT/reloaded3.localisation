@@ -1,0 +1,47 @@
+##Spanish translations
+##Este archivo contiene traducciones al español
+
+[[Hello]]
+¡Hola!
+
+[[Goodbye]]
+¡Adiós!
+
+[[Thanks]]
+¡Gracias!
+
+[[Welcome]]
+¡Bienvenido a nuestra aplicación!
+
+[[LongMessage]]
+Este es un mensaje más largo
+que abarca varias líneas.
+Cada línea es parte del valor
+hasta que lleguemos a la siguiente clave.
+
+[[Instructions]]
+Paso 1: Lee la documentación
+Paso 2: Prueba los ejemplos
+Paso 3: Escribe tu propio código
+Paso 4: ¡Diviértete aprendiendo!
+
+[[UI_Button_Submit]]
+Enviar
+
+[[UI_Button_Cancel]]
+Cancelar
+
+[[Error_FileNotFound]]
+No se pudo encontrar el archivo solicitado
+
+[[Error_InvalidInput]]
+Por favor ingrese un valor válido
+
+[[Menu_File_New]]
+Nuevo...
+
+[[Menu_File_Open]]
+Abrir...
+
+[[Menu_File_Save]]
+Guardar

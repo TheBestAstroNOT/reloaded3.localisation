@@ -1,0 +1,47 @@
+##French translations
+##Ce fichier contient des traductions en français
+
+[[Hello]]
+Bonjour !
+
+[[Goodbye]]
+Au revoir !
+
+[[Thanks]]
+Merci beaucoup !
+
+[[Welcome]]
+Bienvenue dans notre application !
+
+[[LongMessage]]
+Ceci est un message plus long
+qui s'étend sur plusieurs lignes.
+Chaque ligne fait partie de la valeur
+jusqu'à ce que nous atteignions la clé suivante.
+
+[[Instructions]]
+Étape 1 : Lisez la documentation
+Étape 2 : Essayez les exemples
+Étape 3 : Écrivez votre propre code
+Étape 4 : Amusez-vous à apprendre !
+
+[[UI_Button_Submit]]
+Soumettre
+
+[[UI_Button_Cancel]]
+Annuler
+
+[[Error_FileNotFound]]
+Le fichier demandé est introuvable
+
+[[Error_InvalidInput]]
+Veuillez saisir une valeur valide
+
+[[Menu_File_New]]
+Nouveau...
+
+[[Menu_File_Open]]
+Ouvrir...
+
+[[Menu_File_Save]]
+Enregistrer

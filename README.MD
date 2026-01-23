@@ -49,7 +49,18 @@ other useful info.
 
 ## About
 
-Test
+A high-performance Rust library for parsing and managing localization files in the Reloaded3 format (`.r3l`).
+
+This library provides fast, memory-efficient translation lookup using hash tables and supports both Rust and C/C++ applications through FFI.
+
+### For Students & Learners 📚
+
+**New to this project?** Check out our student resources:
+- 📖 [Beginner Tutorial](docs/BEGINNER_TUTORIAL.md) - Step-by-step guide to using the library
+- 🎓 [Student Guide](docs/STUDENT_GUIDE.md) - Learning path, concepts, and project ideas
+- 💡 [Example Files](examples/README.md) - Practice files in multiple languages
+
+**Difficulty Level:** ⭐⭐⭐⭐☆ (Intermediate - suitable for students with basic Rust knowledge)
 
 You can learn more about this project in the [dedicated documentation page][docs].
 

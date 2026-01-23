@@ -1,0 +1,67 @@
+##Example 1: Simple Greetings
+##This is a basic example showing key-value pairs
+
+[[Hello]]
+Hello, World!
+
+[[Goodbye]]
+See you later!
+
+[[Thanks]]
+Thank you very much!
+
+[[Welcome]]
+Welcome to our application!
+
+##Example 2: Multi-line values
+##Values can span multiple lines until the next key
+
+[[LongMessage]]
+This is a longer message
+that spans multiple lines.
+Each line is part of the value
+until we reach the next key.
+
+[[Instructions]]
+Step 1: Read the documentation
+Step 2: Try the examples
+Step 3: Write your own code
+Step 4: Have fun learning!
+
+##Example 3: Using comments
+##Comments start with ## and go to end of line
+##They are completely removed during parsing
+
+[[Feature1]]
+This feature is awesome
+
+##TODO: Add more features here later
+
+[[Feature2]]
+This feature is also great
+
+##Example 4: Keys with special names
+##Keys can use underscores and descriptive names
+
+[[UI_Button_Submit]]
+Submit
+
+[[UI_Button_Cancel]]
+Cancel
+
+[[Error_FileNotFound]]
+The requested file could not be found
+
+[[Error_InvalidInput]]
+Please enter a valid value
+
+[[Menu_File_New]]
+New...
+
+[[Menu_File_Open]]
+Open...
+
+[[Menu_File_Save]]
+Save
+
+##End of examples file
