@@ -19,7 +19,7 @@ c-exports = []
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dev-dependencies]
-criterion = "0.6.0"
+criterion = "0.8.2"
 
 [target.'cfg(unix)'.dev-dependencies]
 pprof = { version = "0.15.0", features = ["flamegraph", "criterion"] }
@@ -47,6 +47,7 @@ path = "benches/my_benchmark/main.rs"
 harness = false
 
 [dependencies]
-hashbrown = "0.15.3"
+hashbrown = "0.16.1"
+lite-strtab = "0.2.0"
 memchr = "2.7.4"
 xxhash-rust = { version = "0.8.15", features = ["xxh3"] }
