@@ -6,6 +6,7 @@ use memchr::{memchr, memmem};
 use std::fs;
 use std::path::Path;
 use xxhash_rust::xxh3::xxh3_64;
+use lite_strtab::{StringTableBuilder, StringId};
 
 pub fn parse_r3locale_file(path: &Path) -> Result<LocaleTable, ParseR3Error> {
     if !path.exists() {
@@ -52,9 +53,8 @@ pub fn parse_r3locale_bytes(bytes: &[u8]) -> Result<LocaleTable, ParseR3Error> {
     value_start.dedup();
     value_start.sort();
 
-    let mut concatenated_value: Vec<u8> = Vec::with_capacity(sanitised_bytes.len());
+    let mut string_table_builder = StringTableBuilder::<u32, u16>::new();
     let mut locale_hash_table: HashTable<TableEntry> = HashTable::new();
-    let mut offset = 0;
     for i in 0..opening_brackets_matches_final
         .len()
         .min(closing_brackets_matches_final.len())
@@ -74,19 +74,16 @@ pub fn parse_r3locale_bytes(bytes: &[u8]) -> Result<LocaleTable, ParseR3Error> {
                     .unwrap_or(&sanitised_bytes.len())],
         )
         .expect("Invalid UTF-8 input")
-        .trim()
-        .as_bytes();
-        concatenated_value.extend_from_slice(value);
-        if insert_into_hashtable(&mut locale_hash_table, key, offset, value.len()).is_err() {
+        .trim();
+        let string_id = string_table_builder.try_push(value).map_err(|_| ParseR3Error::InvalidUTF8Value)?;
+        if insert_into_hashtable(&mut locale_hash_table, key, string_id).is_err() {
             return Err(ParseR3Error::DuplicateKeys);
         }
 
-        offset += value.len();
     }
-    concatenated_value.shrink_to_fit();
 
     Ok(LocaleTable {
-        unified_box: concatenated_value.into_boxed_slice(),
+        string_values: string_table_builder.build(),
         entries: locale_hash_table,
     })
 }
@@ -94,8 +91,7 @@ pub fn parse_r3locale_bytes(bytes: &[u8]) -> Result<LocaleTable, ParseR3Error> {
 pub fn insert_into_hashtable(
     table: &mut HashTable<TableEntry>,
     key: &[u8],
-    offset: usize,
-    length: usize,
+    string_id: StringId<u16>
 ) -> Result<(), ParseR3Error> {
     let hash = xxh3_64(key);
     if table
@@ -106,8 +102,7 @@ pub fn insert_into_hashtable(
             hash,
             TableEntry {
                 key: hash,
-                offset,
-                length,
+                string_id
             },
             move |e: &TableEntry| e.key,
         );
@@ -177,46 +172,45 @@ pub fn get_locale_table_rust(path: &Path) -> Result<LocaleTable, ParseR3Error> {
 }
 
 pub fn merge_locale_table_rust(tables: &[&LocaleTable]) -> MergeResult {
-    let initial_hasher = |entry: &(TableEntry, &Box<[u8]>)| entry.0.key;
-    let final_hasher = |entry: &TableEntry| entry.key;
-    let mut initial_table: HashTable<(TableEntry, &Box<[u8]>)> = HashTable::new();
+    let mut builder = StringTableBuilder::<u32, u16>::new();
+    let mut final_table: HashTable<TableEntry> = HashTable::new();
 
     for table in tables {
         for entry in table.entries.iter() {
-            if initial_table
-                .find(entry.key, |table_entry: &(TableEntry, &Box<[u8]>)| {
-                    table_entry.0.key == entry.key
-                })
-                .is_none()
+            if final_table.find(entry.key, |e: &TableEntry| e.key == entry.key).is_none()
             {
-                initial_table.insert_unique(
+                let value = table
+                    .string_values
+                    .get(entry.string_id)
+                    .unwrap();
+
+                let new_id = match builder.try_push(value) {
+                    Ok(id) => id,
+                    Err(_) => {
+                        return MergeResult {
+                            table: std::ptr::null_mut(),
+                            merge_state: MergeTableError::InvalidUTF8Value,
+                        }
+                    }
+                };
+
+                final_table.insert_unique(
                     entry.key,
-                    (*entry, &table.unified_box),
-                    initial_hasher,
+                    TableEntry {
+                        key: entry.key,
+                        string_id: new_id,
+                    },
+                    |e| e.key,
                 );
             }
         }
     }
 
-    let mut final_table: HashTable<TableEntry> = HashTable::new();
-    let mut final_buffer: Vec<u8> = Vec::new();
-    for entry in initial_table.iter() {
-        final_table.insert_unique(
-            entry.0.key,
-            TableEntry {
-                key: entry.0.key,
-                length: entry.0.length,
-                offset: final_buffer.len(),
-            },
-            final_hasher,
-        );
-        final_buffer.extend_from_slice(&entry.1[entry.0.offset..entry.0.offset + entry.0.length]);
-    }
+    let final_strings = builder.build();
 
-    let final_boxed_buffer = final_buffer.into_boxed_slice();
     MergeResult {
         table: Box::into_raw(Box::new(LocaleTable {
-            unified_box: final_boxed_buffer,
+            string_values: final_strings,
             entries: final_table,
         })),
         merge_state: MergeTableError::Normal,

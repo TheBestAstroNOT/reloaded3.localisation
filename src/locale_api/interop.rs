@@ -4,19 +4,19 @@ use hashbrown::HashTable;
 use std::ffi::CStr;
 use std::os::raw::c_char;
 use std::path::Path;
+use lite_strtab::{StringId, StringTable};
 use xxhash_rust::xxh3::xxh3_64;
 
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct TableEntry {
     pub key: u64,
-    pub offset: usize,
-    pub length: usize,
+    pub string_id: StringId<u16>,
 }
 
 #[repr(C)]
 pub struct LocaleTable {
-    pub unified_box: Box<[u8]>,
+    pub string_values: StringTable<u32, u16>,
     pub entries: HashTable<TableEntry>,
 }
 
@@ -158,13 +158,11 @@ pub unsafe extern "C" fn get_entry(
     let table = unsafe { &*table };
     let key = unsafe { std::slice::from_raw_parts(key_ptr, key_len) };
 
-    if let Some((offset, length)) = table.find_entry_raw(key) {
-        unsafe {
-            FindEntryResult {
-                value_ptr: table.unified_box.as_ptr().add(offset),
-                value_len: length,
-                allocation_state: FindEntryError::Normal,
-            }
+    if let Some(value) = table.find_entry(key) {
+        FindEntryResult {
+            value_ptr: value.as_ptr(),
+            value_len: value.len(),
+            allocation_state: FindEntryError::Normal,
         }
     } else {
         FindEntryResult {
@@ -185,34 +183,22 @@ pub unsafe extern "C" fn free_locale_table(ptr: *mut LocaleTable) {
 impl LocaleTable {
     pub fn show_all_entries(&self) {
         for entry in self.entries.iter() {
-            let data_slice = &self.unified_box[entry.offset..entry.offset + entry.length];
-            match std::str::from_utf8(data_slice) {
-                Ok(value_str) => {
-                    println!("Key: {:016x}, Value: {}", entry.key, value_str);
+            match self.string_values.get(entry.string_id) {
+                Some(value) => {
+                    println!("Key: {:016x}, Value: {}", entry.key, value);
                 }
-                Err(_) => {
-                    println!("Key: {:016x}, Value: <invalid UTF-8>", entry.key);
+                None => {
+                    println!("Key: {:016x}, Value: <Invalid Key>", entry.key);
                 }
             }
         }
-    }
-
-    pub fn find_entry_raw(&self, key: &[u8]) -> Option<(usize, usize)> {
-        let hash = xxh3_64(key);
-        self.entries
-            .find(hash, |entry| entry.key == hash)
-            .map(|entry| return (entry.offset, entry.length));
-        None
     }
 
     pub fn find_entry(&self, key: &[u8]) -> Option<&str> {
         let hash = xxh3_64(key);
         self.entries
             .find(hash, |entry| entry.key == hash)
-            .and_then(|entry| {
-                let slice = &self.unified_box[entry.offset..entry.offset + entry.length];
-                std::str::from_utf8(slice).ok()
-            })
+            .and_then(|entry| self.string_values.get(entry.string_id))
     }
 }
 
