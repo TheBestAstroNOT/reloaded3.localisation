@@ -22,7 +22,7 @@ pub fn parse_r3locale_bytes(bytes: &[u8]) -> Result<LocaleTable, ParseR3Error> {
         Ok(b) => b,
         Err(e) => return Err(e),
     };
-
+    
     let opening_brackets_matches_initial: Vec<usize> =
         memmem::find_iter(&sanitised_bytes, b"[[").collect();
     let mut opening_brackets_matches_final: Vec<usize> =
