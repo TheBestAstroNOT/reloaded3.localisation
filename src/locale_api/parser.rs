@@ -12,30 +12,30 @@ pub fn parse_r3locale_file(path: &Path) -> Result<LocaleTable, ParseR3Error> {
     if !path.exists() {
         return Err(ParseR3Error::FileNotFound);
     }
-    let bytes = fs::read(path).map_err(|_| ParseR3Error::FailedToRead)?;
-    parse_r3locale_bytes(&bytes)
+    let mut bytes = fs::read(path).map_err(|_| ParseR3Error::FailedToRead)?;
+    parse_r3locale_bytes(&mut *bytes)
 }
 
 //Parses a reloaded 3 localisation file and returns a LocaleTable
-pub fn parse_r3locale_bytes(bytes: &[u8]) -> Result<LocaleTable, ParseR3Error> {
-    let sanitised_bytes: Box<[u8]> = match sanitize_r3_locale_file(bytes) {
-        Ok(b) => b,
+pub fn parse_r3locale_bytes(bytes: &mut [u8]) -> Result<LocaleTable, ParseR3Error> {
+    match sanitize_r3_locale_file(bytes) {
+        Ok(_) => (),
         Err(e) => return Err(e),
     };
     
     let opening_brackets_matches_initial: Vec<usize> =
-        memmem::find_iter(&sanitised_bytes, b"[[").collect();
+        memmem::find_iter(&bytes, b"[[").collect();
     let mut opening_brackets_matches_final: Vec<usize> =
         Vec::with_capacity(opening_brackets_matches_initial.len());
     let mut closing_brackets_matches_final: Vec<usize> =
         Vec::with_capacity(opening_brackets_matches_initial.len());
     let mut value_start: Vec<usize> = Vec::with_capacity(opening_brackets_matches_initial.len());
     for item in &opening_brackets_matches_initial {
-        if *item == 0 || sanitised_bytes[item - 1] == b'\n' {
+        if *item == 0 || bytes[item - 1] == b'\n' {
             opening_brackets_matches_final.push(*item);
-            if let Some(close_pos) = memmem::find(&sanitised_bytes[*item..], b"]]") {
+            if let Some(close_pos) = memmem::find(&bytes[*item..], b"]]") {
                 closing_brackets_matches_final.push(item + close_pos);
-                if let Some(value_open_pos) = memchr(b'\n', &sanitised_bytes[item + close_pos..]) {
+                if let Some(value_open_pos) = memchr(b'\n', &bytes[item + close_pos..]) {
                     value_start.push(item + close_pos + value_open_pos);
                 } else {
                     return Err(ParseR3Error::KeyValueMismatch);
@@ -61,17 +61,17 @@ pub fn parse_r3locale_bytes(bytes: &[u8]) -> Result<LocaleTable, ParseR3Error> {
         .min(value_start.len())
     {
         let key = std::str::from_utf8(
-            &sanitised_bytes
+            &bytes
                 [opening_brackets_matches_final[i] + 2..closing_brackets_matches_final[i]],
         )
         .expect("Invalid UTF-8 input")
         .trim()
         .as_bytes();
         let value = std::str::from_utf8(
-            &sanitised_bytes[value_start[i]
+            &bytes[value_start[i]
                 ..*opening_brackets_matches_final
                     .get(i + 1)
-                    .unwrap_or(&sanitised_bytes.len())],
+                    .unwrap_or(&bytes.len())],
         )
         .expect("Invalid UTF-8 input")
         .trim();
@@ -118,9 +118,8 @@ mod tests {
 
     #[test]
     fn test_parse_and_find_entry() {
-        let sample =
-            b"[[example_key]]hiiii\nexample_value\n##BYEE\n[[another_key]]\nanother_value\n";
-        let table = parse_r3locale_bytes(sample).expect("Parse failed");
+        let mut sample = Box::from(*b"[[example_key]]hiiii\nexample_value\n##BYEE\n[[another_key]]\nanother_value\n");
+        let table = parse_r3locale_bytes(&mut *sample).expect("Parse failed");
 
         let val = table.find_entry(b"example_key");
         assert_eq!(val, Some("example_value"));
@@ -134,29 +133,29 @@ mod tests {
 
     #[test]
     fn test_invalid_utf8() {
-        let sample = b"[[bad_key]]\n\xFF\xFE\xFD\n";
-        let result = parse_r3locale_bytes(sample);
+        let mut sample = Box::from(*b"[[bad_key]]\n\xFF\xFE\xFD\n");
+        let result = parse_r3locale_bytes(&mut *sample);
         assert!(matches!(result, Err(ParseR3Error::InvalidUTF8Value)));
     }
 
     #[test]
     fn test_key_value_mismatch() {
-        let sample = b"[[only_key]]"; // no value
-        let result = parse_r3locale_bytes(sample);
+        let mut sample = Box::from(*b"[[only_key]]"); // no value
+        let result = parse_r3locale_bytes(&mut *sample);
         assert!(matches!(result, Err(ParseR3Error::KeyValueMismatch)));
     }
 
     #[test]
     fn test_bracket_mismatch() {
-        let sample = b"[[no_close\nvalue here\n";
-        let result = parse_r3locale_bytes(sample);
+        let mut sample = Box::from(*b"[[no_close\nvalue here\n");
+        let result = parse_r3locale_bytes(&mut *sample);
         assert!(matches!(result, Err(ParseR3Error::BracketMismatch)));
     }
 
     #[test]
     fn test_duplicate_keys() {
-        let sample = b"[[duplicate_key]]\nfirst_value\n[[duplicate_key]]\nsecond_value";
-        let result = parse_r3locale_bytes(sample);
+        let mut sample = Box::from(*b"[[duplicate_key]]\nfirst_value\n[[duplicate_key]]\nsecond_value");
+        let result = parse_r3locale_bytes(&mut *sample);
         assert!(matches!(result, Err(ParseR3Error::DuplicateKeys)));
     }
 }
